@@ -33,7 +33,6 @@ def index():
 @app.route('/api/employees', methods=['GET'])
 def get_employees():
     db = get_db()
-    # Fetch active employees and join to get manager names for the UI
     cursor = db.execute('''
         SELECT e.id, e.name, e.role, e.team, e.start_date, e.salary_cents,
                m.name as manager_name
@@ -58,7 +57,6 @@ def request_leave():
     if not all([employee_id, start_date_str, end_date_str]):
         return jsonify({"error": "Missing required fields"}), 400
 
-    # BUSINESS LOGIC: Safeguard against short-notice leave
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
     days_notice = (start_date - datetime.now()).days
 
@@ -85,29 +83,45 @@ def approve_leave(request_id):
     return jsonify({"message": "Leave approved"})
 
 
-# --- MATH HELPER ---
+# --- MATH HELPER (KENYAN TAX) ---
 
-def calculate_taxes(gross_cents):
+def calculate_taxes(taxable_cents):
     """
-    Simple progressive tax bracket (values in cents).
-    Bucket 1 (0 - $1,000): 0%
-    Bucket 2 ($1,001 - $3,000): 10%
-    Bucket 3 (Above $3,000): 20%
+    Kenyan KRA PAYE Tax Brackets (Monthly)
+    Values calculated in cents to avoid float inaccuracies.
     """
     tax = 0
-    remaining = gross_cents
+    remaining = taxable_cents
 
-    # Calculate top bucket first
-    if remaining > 300000:
-        tax += (remaining - 300000) * 0.20
-        remaining = 300000
+    # Above 800,000 KES (80,000,000 cents) @ 35%
+    if remaining > 80000000:
+        tax += (remaining - 80000000) * 0.35
+        remaining = 80000000
 
-    # Calculate middle bucket
-    if remaining > 100000:
-        tax += (remaining - 100000) * 0.10
+    # 500,001 to 800,000 KES @ 32.5%
+    if remaining > 50000000:
+        tax += (remaining - 50000000) * 0.325
+        remaining = 50000000
 
-    # Bottom bucket is 0%, so no math needed.
-    return int(tax)
+    # 32,334 to 500,000 KES @ 30%
+    if remaining > 3233300:
+        tax += (remaining - 3233300) * 0.30
+        remaining = 3233300
+
+    # 24,001 to 32,333 KES @ 25%
+    if remaining > 2400000:
+        tax += (remaining - 2400000) * 0.25
+        remaining = 2400000
+
+    # First 24,000 KES @ 10%
+    if remaining > 0:
+        tax += remaining * 0.10
+
+    # Less standard personal relief: 2,400 KES (240,000 cents)
+    tax -= 240000
+    
+    # Tax cannot be negative
+    return max(0, int(tax))
 
 
 # --- PAYROLL ROUTE ---
@@ -115,7 +129,7 @@ def calculate_taxes(gross_cents):
 @app.route('/api/payroll/generate', methods=['POST'])
 def generate_payroll():
     data = request.json
-    period = data.get('period')  # Expected format: 'YYYY-MM'
+    period = data.get('period')
 
     if not period:
         return jsonify({"error": "Period is required (YYYY-MM)"}), 400
@@ -127,8 +141,6 @@ def generate_payroll():
     period_end = datetime(year, month, days_in_month)
 
     db = get_db()
-
-    # Fetch all active employees
     cursor = db.execute("SELECT * FROM employees WHERE is_active = 1")
     employees = cursor.fetchall()
 
@@ -139,17 +151,14 @@ def generate_payroll():
         monthly_gross = annual_salary // 12
         daily_rate = monthly_gross // days_in_month
 
-        # 1. Pro-ration: Mid-month Joiner
         start_date = datetime.strptime(emp['start_date'], '%Y-%m-%d')
         working_days = days_in_month
 
         if start_date > period_start:
             if start_date > period_end:
-                continue  # Employee hasn't joined yet; skip them.
+                continue
             working_days = (period_end - start_date).days + 1
 
-        # 2. Pro-ration: Unpaid Leave
-        # Fetch approved unpaid leave overlapping this specific month
         leave_cursor = db.execute('''
             SELECT start_date, end_date FROM leave_requests
             WHERE employee_id = ? AND status = 'approved' AND is_paid = 0
@@ -158,23 +167,33 @@ def generate_payroll():
 
         unpaid_leave_days = 0
         for req in leave_cursor.fetchall():
-            # Clamp the leave dates to the current month's boundaries
             l_start = max(datetime.strptime(req['start_date'], '%Y-%m-%d'), period_start)
             l_end = min(datetime.strptime(req['end_date'], '%Y-%m-%d'), period_end)
             unpaid_leave_days += (l_end - l_start).days + 1
 
         actual_working_days = working_days - unpaid_leave_days
-
-        # 3. Calculate Final Pay
         actual_gross = daily_rate * actual_working_days
 
-        tax_deduction = calculate_taxes(actual_gross)
-        social_security = int(actual_gross * 0.05)  # Flat 5% SS
-        total_deductions = tax_deduction + social_security
+        # --- KENYAN STATUTORY DEDUCTIONS ---
+        
+        # 1. NSSF: 6% of Gross up to KES 36,000 limit (Tier 1 & 2 max)
+        nssf_deduction = int(min(actual_gross, 3600000) * 0.06)
 
+        # Taxable income is Gross minus NSSF (NSSF is tax deductible)
+        taxable_income = actual_gross - nssf_deduction
+
+        # 2. PAYE (Income Tax)
+        paye_tax = calculate_taxes(taxable_income)
+
+        # 3. SHIF (Health Insurance): 2.75% of Gross
+        shif_deduction = int(actual_gross * 0.0275)
+
+        # 4. Affordable Housing Levy: 1.5% of Gross
+        housing_levy = int(actual_gross * 0.015)
+
+        total_deductions = paye_tax + nssf_deduction + shif_deduction + housing_levy
         net_pay = actual_gross - total_deductions
 
-        # 4. Save to Database
         db.execute('''
             INSERT INTO payslips (employee_id, period, gross_pay_cents, deductions_cents, net_pay_cents)
             VALUES (?, ?, ?, ?, ?)
@@ -182,7 +201,7 @@ def generate_payroll():
 
         processed_records.append({
             "employee": emp['name'],
-            "gross": actual_gross / 100,  # Convert back to standard currency for the UI
+            "gross": actual_gross / 100,
             "net": net_pay / 100
         })
 
@@ -193,6 +212,7 @@ def generate_payroll():
         "records_processed": len(processed_records),
         "summary": processed_records
     }), 201
+
 
 @app.route('/api/leave', methods=['GET'])
 def get_leave_requests():
@@ -205,6 +225,7 @@ def get_leave_requests():
     ''')
     return jsonify([dict(row) for row in cursor.fetchall()])
 
+
 @app.route('/api/payroll', methods=['GET'])
 def get_payroll():
     period = request.args.get('period')
@@ -216,6 +237,7 @@ def get_payroll():
         WHERE p.period = ?
     ''', (period,))
     return jsonify([dict(row) for row in cursor.fetchall()])
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
