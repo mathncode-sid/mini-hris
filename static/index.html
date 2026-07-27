@@ -9,11 +9,20 @@
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <h2>Mini-HRIS</h2>
+            <h2><span>❖</span> Mini-HRIS</h2>
             <nav>
-                <button class="nav-btn active" data-target="employees">Org Chart</button>
-                <button class="nav-btn" data-target="leave">Leave Management</button>
-                <button class="nav-btn" data-target="payroll">Payroll</button>
+                <button class="nav-btn active" data-target="employees">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Org Chart
+                </button>
+                <button class="nav-btn" data-target="leave">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Leave Management
+                </button>
+                <button class="nav-btn" data-target="payroll">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path></svg>
+                    Payroll
+                </button>
             </nav>
         </aside>
 
@@ -64,7 +73,6 @@
                         </div>
                         <button type="submit" id="submit-leave-btn" class="primary-btn">Submit Request</button>
                     </form>
-                    <p id="leave-error" class="error-msg"></p>
                 </div>
 
                 <div class="card mt-4">
@@ -95,7 +103,6 @@
                         <button id="generate-payroll-btn" class="primary-btn">Run Payroll</button>
                         <button id="view-payroll-btn" class="secondary-btn">View Existing</button>
                     </div>
-                    <p id="payroll-status" class="status-msg"></p>
                 </div>
 
                 <div class="card mt-4">
@@ -116,6 +123,10 @@
             </section>
         </main>
     </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+    
     <script src="app.js"></script>
 </body>
 </html>
