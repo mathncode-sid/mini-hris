@@ -48,17 +48,29 @@ def init_db():
     )
     ''')
 
-    # Insert Sample Data
+    # Clear existing data so running this script multiple times doesn't create duplicates
     cursor.executescript('''
-        -- Insert a Manager
-        INSERT INTO employees (name, role, team, manager_id, start_date, salary_cents, employment_type) 
-        VALUES ('Jane Doe', 'Engineering Manager', 'Engineering', NULL, '2023-01-15', 12000000, 'Full-time');
-        
-        -- Insert a Developer reporting to the Manager
-        INSERT INTO employees (name, role, team, manager_id, start_date, salary_cents, employment_type) 
-        VALUES ('John Smith', 'Software Engineer', 'Engineering', 1, '2024-02-01', 9000000, 'Full-time');
+        DELETE FROM payslips;
+        DELETE FROM leave_requests;
+        DELETE FROM employees;
+    ''')
 
-        -- Insert a sample leave request
+    # Insert Sample Data (Kenyan Context)
+    # Note: salary_cents = Annual Salary in KES * 100
+    cursor.executescript('''
+        -- 1. Manager: KES 2,400,000 annual (KES 200,000/month)
+        INSERT INTO employees (id, name, role, team, manager_id, start_date, salary_cents, employment_type) 
+        VALUES (1, 'Sarah Mwangi', 'Engineering Manager', 'Engineering', NULL, '2023-01-15', 240000000, 'Full-time');
+        
+        -- 2. Engineer: KES 1,200,000 annual (KES 100,000/month)
+        INSERT INTO employees (id, name, role, team, manager_id, start_date, salary_cents, employment_type) 
+        VALUES (2, 'David Ochieng', 'Software Engineer', 'Engineering', 1, '2024-02-01', 120000000, 'Full-time');
+        
+        -- 3. Designer: KES 1,500,000 annual (KES 125,000/month)
+        INSERT INTO employees (id, name, role, team, manager_id, start_date, salary_cents, employment_type) 
+        VALUES (3, 'Amina Hassan', 'Product Designer', 'Design', 1, '2025-06-10', 150000000, 'Full-time');
+
+        -- Insert a sample leave request for David
         INSERT INTO leave_requests (employee_id, start_date, end_date, status, is_paid)
         VALUES (2, '2026-08-10', '2026-08-14', 'pending', 1);
     ''')
