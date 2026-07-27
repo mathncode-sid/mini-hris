@@ -86,5 +86,3 @@ Given more time, I would expand the system with the following features:
 1. **Role-Based Access Control (RBAC):** Implementing JWT-based authentication to restrict the "Approve" button and Payroll generation strictly to users with a `Manager` or `HR` role.
 2. **Concurrency Handling:** Implementing database locking during the payroll generation route to prevent race conditions if multiple admins attempt to generate the same period simultaneously.
 3. **Export Capabilities:** A route to generate and download Payslips in PDF format or export a month's payroll ledger as a CSV file.
-
-```
