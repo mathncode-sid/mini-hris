@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-HRIS Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <h2>Mini-HRIS</h2>
+            <nav>
+                <button class="nav-btn active" data-target="employees">Org Chart</button>
+                <button class="nav-btn" data-target="leave">Leave Management</button>
+                <button class="nav-btn" data-target="payroll">Payroll</button>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <!-- Employees View -->
+            <section id="employees" class="view active">
+                <header>
+                    <h1>Organization</h1>
+                </header>
+                <div class="card">
+                    <table id="employees-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Manager</th>
+                                <th>Salary (Annual)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-body">
+                            <tr><td colspan="4" class="empty-state">Loading employees...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Leave View -->
+            <section id="leave" class="view">
+                <header>
+                    <h1>Leave Approvals</h1>
+                    <button id="new-leave-btn" class="primary-btn">Request Leave</button>
+                </header>
+                
+                <div id="leave-form-container" class="card hidden">
+                    <h3>New Request</h3>
+                    <form id="leave-form">
+                        <div class="form-group">
+                            <label>Employee ID</label>
+                            <input type="number" id="leave-emp-id" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <input type="date" id="leave-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="date" id="leave-end" required>
+                        </div>
+                        <button type="submit" id="submit-leave-btn" class="primary-btn">Submit Request</button>
+                    </form>
+                    <p id="leave-error" class="error-msg"></p>
+                </div>
+
+                <div class="card mt-4">
+                    <table id="leave-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Dates</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leave-body">
+                            <tr><td colspan="4" class="empty-state">Loading requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Payroll View -->
+            <section id="payroll" class="view">
+                <header>
+                    <h1>Payroll Generation</h1>
+                </header>
+                <div class="card">
+                    <div class="payroll-controls">
+                        <input type="month" id="payroll-period" required>
+                        <button id="generate-payroll-btn" class="primary-btn">Run Payroll</button>
+                        <button id="view-payroll-btn" class="secondary-btn">View Existing</button>
+                    </div>
+                    <p id="payroll-status" class="status-msg"></p>
+                </div>
+
+                <div class="card mt-4">
+                    <table id="payroll-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Gross Pay</th>
+                                <th>Deductions</th>
+                                <th>Net Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payroll-body">
+                            <tr><td colspan="4" class="empty-state">Select a period to view payslips.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
