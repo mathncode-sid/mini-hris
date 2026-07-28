@@ -3,130 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini-HRIS Dashboard</title>
+    <title>Mini-HRIS</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-shell">
         <aside class="sidebar">
-            <h2><span>❖</span> Mini-HRIS</h2>
-            <nav>
-                <button class="nav-btn active" data-target="employees">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    Org Chart
-                </button>
-                <button class="nav-btn" data-target="leave">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    Leave Management
-                </button>
-                <button class="nav-btn" data-target="payroll">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path></svg>
-                    Payroll
-                </button>
+            <div class="brand">
+                <span class="brand-mark">MH</span>
+                <div>
+                    <strong>Mini-HRIS</strong>
+                    <span>People operations</span>
+                </div>
+            </div>
+            <nav aria-label="Primary">
+                <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+                <button class="nav-btn" data-target="employees">Organization</button>
+                <button class="nav-btn" data-target="leave">Leave</button>
+                <button class="nav-btn" data-target="payroll">Payroll</button>
             </nav>
         </aside>
 
         <main class="content">
-            <!-- Employees View -->
-            <section id="employees" class="view active">
-                <header>
-                    <h1>Organization</h1>
-                </header>
-                <div class="card">
-                    <table id="employees-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th>Manager</th>
-                                <th>Salary (Annual)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="employees-body">
-                            <tr><td colspan="4" class="empty-state">Loading employees...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Leave View -->
-            <section id="leave" class="view">
-                <header>
-                    <h1>Leave Approvals</h1>
-                    <button id="new-leave-btn" class="primary-btn">Request Leave</button>
-                </header>
-                
-                <div id="leave-form-container" class="card hidden">
-                    <h3>New Request</h3>
-                    <form id="leave-form">
-                        <div class="form-group">
-                            <label>Employee ID</label>
-                            <input type="number" id="leave-emp-id" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="date" id="leave-start" required>
-                        </div>
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="date" id="leave-end" required>
-                        </div>
-                        <button type="submit" id="submit-leave-btn" class="primary-btn">Submit Request</button>
-                    </form>
-                </div>
-
-                <div class="card mt-4">
-                    <table id="leave-table">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Dates</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leave-body">
-                            <tr><td colspan="4" class="empty-state">Loading requests...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Payroll View -->
-            <section id="payroll" class="view">
-                <header>
-                    <h1>Payroll Generation</h1>
-                </header>
-                <div class="card">
-                    <div class="payroll-controls">
-                        <input type="month" id="payroll-period" required>
-                        <button id="generate-payroll-btn" class="primary-btn">Run Payroll</button>
-                        <button id="view-payroll-btn" class="secondary-btn">View Existing</button>
+            <section id="dashboard" class="view active">
+                <header class="page-header">
+                    <div>
+                        <p class="eyebrow">Today</p>
+                        <h1>HR operations dashboard</h1>
                     </div>
+                    <button id="refresh-dashboard-btn" class="secondary-btn">Refresh</button>
+                </header>
+
+                <div class="metrics-grid">
+                    <article class="metric">
+                        <span>Active employees</span>
+                        <strong id="metric-employees">-</strong>
+                    </article>
+                    <article class="metric">
+                        <span>Pending approvals</span>
+                        <strong id="metric-pending">-</strong>
+                    </article>
+                    <article class="metric">
+                        <span>Escalations</span>
+                        <strong id="metric-escalations">-</strong>
+                    </article>
                 </div>
 
-                <div class="card mt-4">
-                    <table id="payroll-table">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Gross Pay</th>
-                                <th>Deductions</th>
-                                <th>Net Pay</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payroll-body">
-                            <tr><td colspan="4" class="empty-state">Select a period to view payslips.</td></tr>
-                        </tbody>
-                    </table>
+                <div class="split-grid">
+                    <section class="panel">
+                        <div class="panel-heading">
+                            <h2>Upcoming absence</h2>
+                            <span>Next 30 days</span>
+                        </div>
+                        <div id="out-soon-list" class="stack-list">
+                            <p class="empty-state">Loading absence data...</p>
+                        </div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-heading">
+                            <h2>Leave balances</h2>
+                            <span>Paid leave year-to-date</span>
+                        </div>
+                        <div id="balance-list" class="stack-list">
+                            <p class="empty-state">Loading balances...</p>
+                        </div>
+                    </section>
                 </div>
+            </section>
+
+            <section id="employees" class="view">
+                <header class="page-header">
+                    <div>
+                        <p class="eyebrow">Directory</p>
+                        <h1>Organization</h1>
+                    </div>
+                </header>
+
+                <section class="panel">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Team</th>
+                                    <th>Manager</th>
+                                    <th>Employment</th>
+                                    <th>Annual salary</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employees-body">
+                                <tr><td colspan="7" class="empty-state">Loading employees...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <section id="leave" class="view">
+                <header class="page-header">
+                    <div>
+                        <p class="eyebrow">Approvals</p>
+                        <h1>Leave management</h1>
+                    </div>
+                    <button id="new-leave-btn" class="primary-btn">New request</button>
+                </header>
+
+                <section id="leave-form-container" class="panel hidden">
+                    <div class="panel-heading">
+                        <h2>Submit leave</h2>
+                        <span>7 day notice, balance, overlap, and coverage rules apply</span>
+                    </div>
+                    <form id="leave-form" class="form-grid">
+                        <label>
+                            Employee
+                            <select id="leave-emp-id" required></select>
+                        </label>
+                        <label>
+                            Start date
+                            <input type="date" id="leave-start" required>
+                        </label>
+                        <label>
+                            End date
+                            <input type="date" id="leave-end" required>
+                        </label>
+                        <label>
+                            Pay treatment
+                            <select id="leave-paid" required>
+                                <option value="1">Paid leave</option>
+                                <option value="0">Unpaid leave</option>
+                            </select>
+                        </label>
+                        <label class="full-width">
+                            Reason
+                            <input type="text" id="leave-reason" maxlength="160" placeholder="Optional">
+                        </label>
+                        <div class="form-actions full-width">
+                            <button type="submit" id="submit-leave-btn" class="primary-btn">Submit request</button>
+                            <button type="button" id="cancel-leave-btn" class="secondary-btn">Cancel</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Team</th>
+                                    <th>Dates</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leave-body">
+                                <tr><td colspan="6" class="empty-state">Loading requests...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <section id="payroll" class="view">
+                <header class="page-header">
+                    <div>
+                        <p class="eyebrow">Monthly run</p>
+                        <h1>Payroll</h1>
+                    </div>
+                </header>
+
+                <section class="panel">
+                    <div class="toolbar">
+                        <label>
+                            Period
+                            <input type="month" id="payroll-period" required>
+                        </label>
+                        <button id="generate-payroll-btn" class="primary-btn">Generate</button>
+                        <button id="view-payroll-btn" class="secondary-btn">View</button>
+                        <button id="export-payroll-btn" class="secondary-btn">Export CSV</button>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-heading">
+                        <h2>Payslips</h2>
+                        <span id="payroll-summary">Select a period to view payslips.</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Gross</th>
+                                    <th>NSSF</th>
+                                    <th>PAYE</th>
+                                    <th>SHIF</th>
+                                    <th>Housing</th>
+                                    <th>Unpaid days</th>
+                                    <th>Net</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payroll-body">
+                                <tr><td colspan="8" class="empty-state">No period selected.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </section>
         </main>
     </div>
 
-    <!-- Toast Notifications Container -->
-    <div id="toast-container" class="toast-container"></div>
-    
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <script src="app.js"></script>
 </body>
 </html>
