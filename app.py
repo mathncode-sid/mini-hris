@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 import calendar
 import re
 import sqlite3
+import os
 
 from flask import Flask, Response, g, jsonify, request
 import csv
@@ -9,7 +10,8 @@ from io import StringIO
 
 
 app = Flask(__name__, static_folder='static', static_url_path='')
-DATABASE = 'hr_system.sqlite'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.environ.get('HR_SYSTEM_DATABASE', os.path.join(BASE_DIR, 'hr_system.sqlite'))
 
 MIN_NOTICE_DAYS = 7
 PAID_LEAVE_DAYS_PER_YEAR = 20

@@ -1,4 +1,9 @@
+import os
 import sqlite3
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DATABASE = os.environ.get('HR_SYSTEM_DATABASE', os.path.join(BASE_DIR, 'hr_system.sqlite'))
 
 
 def create_schema(conn):
@@ -123,7 +128,7 @@ def generate_sample_payroll(conn):
         ))
 
 
-def init_db(path='hr_system.sqlite'):
+def init_db(path=DEFAULT_DATABASE):
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript('''
