@@ -1,88 +1,138 @@
 # Mini-HRIS
 
-A lightweight internal HR and Payroll tool built to solve real-world spreadsheet inefficiencies. This project prioritizes accurate financial math, robust leave request safeguards, and a seamless developer experience over framework complexity.
+A small internal HR and payroll tool built with Flask, SQLite, and vanilla HTML/CSS/JS.
 
-## Scope & Prioritization
+The project focuses on the parts of the brief where correctness matters most: leave rules, manager approvals, payroll proration, repeatable payroll runs, and a dashboard that exposes operational state.
 
-The brief noted a preference for depth in a few modules rather than a shallow complete system. I prioritized **Backend Business Logic, Statutory Compliance, and Data Integrity**.
+## What I Prioritized
 
-*   **Flask + Vanilla JS:** I chose vanilla HTML/CSS/JS for the frontend to avoid build steps and state management overhead. This allowed me to dedicate maximum time to the core grading criteria: the financial math, unit tests, and HR safeguards on the backend.
-*   **Cents-Based Integer Math:** Floating-point inaccuracies can silently ruin payroll systems. All monetary values are strictly calculated as integers (cents) on the backend, only converting to decimals for the final UI render.
-*   **Zero Configuration (SQLite):** Chosen to eliminate reviewer friction. It requires no Docker containers or PostgreSQL credential configuration, ensuring the app runs flawlessly out of the box using the included pre-populated sample database.
+I prioritized leave management and payroll depth over authentication or a large employee-admin module. The challenge asks for real business logic rather than broad CRUD, so the app spends most of its effort on policy checks and payroll calculations:
 
-## Core Features & Business Rules
+- Leave requests are validated for notice, date order, employee status, overlapping requests, annual paid leave balance, and team coverage.
+- Managers can approve or reject pending requests.
+- Unpaid approved leave reduces monthly gross pay.
+- Payroll generation handles mid-month joiners, unpaid leave, zero tax cases, and salary values around tax bracket boundaries.
+- Payroll generation is idempotent for a period: re-running a month replaces that month's payslips instead of duplicating them.
+- The dashboard shows pending approvals, escalation count, upcoming absence, and leave balances.
+- Two small stretch improvements are included: employee deactivation and payroll CSV export.
 
-### 1. Leave Management: The 7-Day Notice Safeguard
-Real-world HR systems run into problems when spreadsheets fail to catch short-notice leave, leaving teams unexpectedly under-covered.
-*   **The Rule:** The backend enforces a strict minimum 7-day notice period for all new leave requests.
-*   **The Implementation:** If an employee requests leave starting less than 7 days from the current date, the API rejects the payload with a 400 error and surfaces an animated policy violation warning on the frontend.
+## Tech Stack
 
-### 2. Payroll Automation & Statutory Compliance (Kenyan Context)
-Payroll generation handles edge cases such as mid-month joiners and unpaid leave by dynamically calculating the exact number of days in the requested month (handling leap years and 31-day months accurately). 
+- Backend: Flask
+- Frontend: HTML, CSS, vanilla JavaScript
+- Database: SQLite
+- Tests: Python `unittest`
 
-The system implements fully compliant Kenyan statutory deductions:
-*   **NSSF:** 6% deduction capped at KES 36,000 (Tier 1 & 2).
-*   **PAYE (Income Tax):** A progressive bracket system applied to income *after* NSSF deduction, factoring in the standard KES 2,400 monthly Personal Relief.
-    *   10% up to KES 24,000
-    *   25% up to KES 32,333
-    *   30% up to KES 500,000
-    *   32.5% up to KES 800,000
-    *   35% above KES 800,000
-*   **SHIF & Housing Levy:** Flat rate deductions of 2.75% and 1.5% applied directly to gross pay.
+## Data Model
+
+The SQLite database contains:
+
+- `employees`: employee profile, manager relationship, active flag, employment type, and salary in cents.
+- `leave_requests`: paid/unpaid leave requests with pending, approved, and rejected statuses.
+- `payslips`: generated monthly payslips with gross pay, deduction breakdown, net pay, payable days, and unpaid leave days.
+
+Employees are deactivated with `is_active`; they are not deleted, so historical payroll records can still join back to employee records.
+
+The Organization screen includes a deactivate action for active employees. Managers with active direct reports cannot be deactivated until those reports are reassigned, which prevents broken reporting lines.
+
+The included `hr_system.sqlite` file acts as the sample database/dump and contains seeded employees, leave requests, and generated payslips for `2026-07`.
+
+## Leave Rules
+
+The app models a few problems that spreadsheet-based leave tracking often misses:
+
+- Short-notice absence: requests must be submitted at least 7 days before the start date.
+- Invalid date ranges: end date cannot be before start date.
+- Double-booking: an employee cannot have overlapping pending or approved leave.
+- Paid leave balance: each active employee has 20 paid leave days per calendar year. Pending and approved paid leave both reserve balance.
+- Team coverage: for teams with enough staff, at least 50% of active team members must remain available on each requested day.
+- Stale approvals: pending requests older than 3 days are surfaced as escalations on the dashboard.
+
+Leave interacts with payroll through unpaid leave. Approved unpaid leave inside a payroll period reduces payable days and gross pay.
+
+## Payroll Formula
+
+All money is stored and calculated in cents using integer math.
+
+Monthly gross pay:
+
+```text
+monthly_gross = annual_salary / 12
+daily_rate = monthly_gross / days_in_month
+gross_pay = daily_rate * payable_days_after_join_date_and_unpaid_leave
+```
+
+Simplified deduction model:
+
+- NSSF-style social security: 6% of gross pay, capped at KES 36,000 gross.
+- Taxable income: gross pay minus social security.
+- PAYE-style progressive tax after KES 2,400 monthly relief:
+  - 10% up to KES 24,000
+  - 25% from KES 24,001 to KES 32,333
+  - 30% from KES 32,334 to KES 500,000
+  - 32.5% from KES 500,001 to KES 800,000
+  - 35% above KES 800,000
+- SHIF-style health deduction: 2.75% of gross pay.
+- Housing levy: 1.5% of gross pay.
+
+This is intentionally a simple assessment formula for the coding challenge, not a claim of production legal compliance for any country.
 
 ## How to Run Locally
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd mini-hris
-   
-  
-
-2. **Set up the virtual environment:**
 ```bash
 python -m venv venv
-venv\Scripts\activate  # For Windows environments
-
-```
-
-
-3. **Install dependencies:**
-```bash
-pip install Flask
-
-```
-
-
-4. **Initialize the database (Optional):**
-```bash
+venv\Scripts\activate
+pip install -r requirements.txt
 python init_db.py
-
-```
-
-
-5. **Start the server:**
-```bash
 python app.py
-
 ```
 
+Open `http://127.0.0.1:5000`.
 
-Navigate to `http://127.0.0.1:5000` in your browser.
+Running `python init_db.py` rebuilds `hr_system.sqlite` with sample employees, leave requests, and a generated `2026-07` payroll period.
 
-## Running the Unit Tests
+## Stretch Features Added
 
-The core business logic is defended by a suite of unit tests isolated on a temporary test database. To verify the PAYE tax math and the 7-day leave notice safeguard, run:
+- Employee deactivation: active employees can be deactivated from the Organization screen. Their historical leave and payslip records remain available.
+- Payroll CSV export: generated payroll periods can be exported from the Payroll screen. The export includes employee, role, team, gross pay, NSSF, PAYE, SHIF, housing levy, total deductions, net pay, payable days, unpaid leave days, and generation timestamp.
+
+## Tests
 
 ```bash
 python -m unittest test_app.py
-
 ```
 
-## Future Improvements (Stretch Goals)
+The test suite covers:
 
-Given more time, I would expand the system with the following features:
+- PAYE zero-deduction and bracket-boundary math.
+- 7-day notice validation.
+- Invalid leave date order.
+- Overlapping leave rejection.
+- Paid leave balance rejection.
+- Team coverage rejection.
+- Rejection workflow.
+- Payroll idempotency.
+- Mid-month joiner proration with approved unpaid leave.
+- Employee deactivation while preserving payslip history.
+- Manager deactivation guard when direct reports are still active.
+- Payroll CSV export for generated periods.
 
-1. **Role-Based Access Control (RBAC):** Implementing JWT-based authentication to restrict the "Approve" button and Payroll generation strictly to users with a `Manager` or `HR` role.
-2. **Concurrency Handling:** Implementing database locking during the payroll generation route to prevent race conditions if multiple admins attempt to generate the same period simultaneously.
-3. **Export Capabilities:** A route to generate and download Payslips in PDF format or export a month's payroll ledger as a CSV file.
+## UI Notes
+
+The frontend is intentionally quiet and operations-focused:
+
+- Dashboard first, not a marketing-style landing page.
+- Employee dropdowns instead of raw ID entry.
+- Dense tables for repeated HR workflows.
+- Clear empty, loading, success, and error states.
+- Responsive layout for smaller screens.
+- Fetched data is rendered through DOM APIs instead of raw HTML string injection.
+
+## What I Would Improve Next
+
+- Add login and role-based access control so only managers/HR can approve leave or run payroll.
+- Add employee create/edit screens and manager reassignment.
+- Add PDF payslip exports.
+- Add payroll finalization/locking after review.
+- Add public holidays and working-day calendars instead of calendar-day proration.
+- Add manager-specific approval queues instead of a global approval list.
